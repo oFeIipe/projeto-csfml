@@ -42,26 +42,3 @@ void drawMenu(sfRenderWindow *window, sfFont *font){
         drawCenteredText(window, font, menu_options[i], y_pos);
     }
 }
-
-/*int main() {
-    sfVideoMode mode = {800, 600, 32};
-    sfRenderWindow* window = sfRenderWindow_create(mode, "Texto Centralizado", sfClose, NULL);
-    sfFont* font = sfFont_createFromFile("./assets/fontes/Arial.ttf");
-    
-
-    while (sfRenderWindow_isOpen(window)) {
-        sfEvent event;
-        while (sfRenderWindow_pollEvent(window, &event)) {
-            if (event.type == sfEvtClosed) sfRenderWindow_close(window);
-    }
-
-    sfRenderWindow_clear(window, sfBlack);
-
-    drawMenu(window, font);
-
-    sfRenderWindow_display(window);
-    }
-
-    sfRenderWindow_destroy(window);
-    return 0;
-}*/
