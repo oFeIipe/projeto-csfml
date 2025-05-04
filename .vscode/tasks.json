@@ -2,19 +2,17 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build CSFML",
+            "label": "Build CSFML Project",
             "type": "shell",
             "command": "C:\\mingw64\\bin\\gcc.exe",
             "args": [
                 "-g",
-                "${file}",
+                "main.c",
                 "interfaces/pauseMenu.c",
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "main.exe",
                 "-IC:/CSFML/include",
-                "-LC:/CSFML/lib",
                 "-LC:/CSFML/lib/gcc",
-                "-LC:/CSFML/lib/msvc",
                 "-lcsfml-graphics",
                 "-lcsfml-window",
                 "-lcsfml-system",
@@ -22,8 +20,7 @@
                 "-lwinmm",
                 "-lgdi32",
                 "-lopengl32",
-                "-Wno-deprecated-declarations",
-                "-fpermissive"
+                "-Wno-deprecated-declarations"
             ],
             "group": {
                 "kind": "build",
