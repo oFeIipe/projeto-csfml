@@ -1,0 +1,3 @@
+C:/Projetos/ProjetoCSFML/build/CMakeFiles/main.dir
+C:/Projetos/ProjetoCSFML/build/CMakeFiles/edit_cache.dir
+C:/Projetos/ProjetoCSFML/build/CMakeFiles/rebuild_cache.dir
