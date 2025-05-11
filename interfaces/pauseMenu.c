@@ -18,7 +18,6 @@ void menu_init(PauseMenu *menu){
     
     sfSprite_setTexture(menu->bg, menu->bg_texture, sfTrue);
     
-
     const char* texts[NUM_OPCOES] = {"RESUME", "SCOREBOARD", "OPTIONS", "QUIT"};
     const int x_pos[NUM_OPCOES] = {335, 300, 330, 355};
 
@@ -83,6 +82,7 @@ void menu_run(PauseMenu* menu) {
 void menu_destroy(PauseMenu* menu) {
     for (int i = 0; i < NUM_OPCOES; i++) {
         sfText_destroy(menu->options[i]);
+        sfSprite_destroy(menu->buttons[i]);
     }
     sfFont_destroy(menu->font);
     sfRenderWindow_destroy(menu->window);
