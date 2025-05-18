@@ -128,30 +128,6 @@ main/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\main.dir\build.make CMakeFiles/main.dir/build
 .PHONY : main/fast
 
-interfaces/pauseMenu.obj: interfaces/pauseMenu.c.obj
-.PHONY : interfaces/pauseMenu.obj
-
-# target to build an object file
-interfaces/pauseMenu.c.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\main.dir\build.make CMakeFiles/main.dir/interfaces/pauseMenu.c.obj
-.PHONY : interfaces/pauseMenu.c.obj
-
-interfaces/pauseMenu.i: interfaces/pauseMenu.c.i
-.PHONY : interfaces/pauseMenu.i
-
-# target to preprocess a source file
-interfaces/pauseMenu.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\main.dir\build.make CMakeFiles/main.dir/interfaces/pauseMenu.c.i
-.PHONY : interfaces/pauseMenu.c.i
-
-interfaces/pauseMenu.s: interfaces/pauseMenu.c.s
-.PHONY : interfaces/pauseMenu.s
-
-# target to generate assembly for a file
-interfaces/pauseMenu.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\main.dir\build.make CMakeFiles/main.dir/interfaces/pauseMenu.c.s
-.PHONY : interfaces/pauseMenu.c.s
-
 main.obj: main.c.obj
 .PHONY : main.obj
 
@@ -185,9 +161,6 @@ help:
 	@echo ... edit_cache
 	@echo ... rebuild_cache
 	@echo ... main
-	@echo ... interfaces/pauseMenu.obj
-	@echo ... interfaces/pauseMenu.i
-	@echo ... interfaces/pauseMenu.s
 	@echo ... main.obj
 	@echo ... main.i
 	@echo ... main.s

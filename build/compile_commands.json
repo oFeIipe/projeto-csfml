@@ -4,11 +4,5 @@
   "command": "C:\\mingw64\\bin\\gcc.exe  @CMakeFiles/main.dir/includes_C.rsp -g -std=gnu17 -o CMakeFiles\\main.dir\\main.c.obj -c C:\\Projetos\\ProjetoCSFML\\main.c",
   "file": "C:/Projetos/ProjetoCSFML/main.c",
   "output": "CMakeFiles/main.dir/main.c.obj"
-},
-{
-  "directory": "C:/Projetos/ProjetoCSFML/build",
-  "command": "C:\\mingw64\\bin\\gcc.exe  @CMakeFiles/main.dir/includes_C.rsp -g -std=gnu17 -o CMakeFiles\\main.dir\\interfaces\\pauseMenu.c.obj -c C:\\Projetos\\ProjetoCSFML\\interfaces\\pauseMenu.c",
-  "file": "C:/Projetos/ProjetoCSFML/interfaces/pauseMenu.c",
-  "output": "CMakeFiles/main.dir/interfaces/pauseMenu.c.obj"
 }
 ]

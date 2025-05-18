@@ -8,7 +8,6 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "C:/Projetos/ProjetoCSFML/interfaces/pauseMenu.c" "CMakeFiles/main.dir/interfaces/pauseMenu.c.obj" "gcc" "CMakeFiles/main.dir/interfaces/pauseMenu.c.obj.d"
   "C:/Projetos/ProjetoCSFML/main.c" "CMakeFiles/main.dir/main.c.obj" "gcc" "CMakeFiles/main.dir/main.c.obj.d"
   )
 

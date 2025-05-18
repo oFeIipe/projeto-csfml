@@ -1,4 +1,6 @@
-CMakeFiles/main.dir/main.c.obj: C:\Projetos\ProjetoCSFML\main.c \
+CMakeFiles/main.dir/interfaces/vector.c.obj: \
+ C:\Projetos\ProjetoCSFML\interfaces\vector.c \
+ C:\Projetos\ProjetoCSFML\interfaces\vector.h \
  C:/CSFML/include/SFML/Graphics.h C:/CSFML/include/SFML/Window.h \
  C:/CSFML/include/SFML/System.h C:/CSFML/include/SFML/Config.h \
  C:/CSFML/include/SFML/System/Buffer.h \
@@ -74,7 +76,6 @@ CMakeFiles/main.dir/main.c.obj: C:\Projetos\ProjetoCSFML\main.c \
  C:/mingw64/x86_64-w64-mingw32/include/malloc.h \
  C:/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/mm_malloc.h \
  C:/mingw64/x86_64-w64-mingw32/include/errno.h \
- C:/mingw64/x86_64-w64-mingw32/include/math.h \
  C:/mingw64/x86_64-w64-mingw32/include/stdio.h \
  C:/mingw64/x86_64-w64-mingw32/include/corecrt_stdio_config.h \
  C:/mingw64/x86_64-w64-mingw32/include/_mingw_off_t.h \

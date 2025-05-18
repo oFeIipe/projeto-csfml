@@ -10,7 +10,8 @@ link_directories("C:/CSFML/lib/gcc")
 # Adicione os arquivos do projeto
 add_executable(main
     main.c
-    interfaces/pauseMenu.c
+    #interfaces/vector.c
+    #interfaces/pauseMenu.c
 )
 
 # Linkar bibliotecas CSFML e outras do sistema
