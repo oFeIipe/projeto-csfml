@@ -151,14 +151,41 @@ void freeBulletVector(BulletVector *vector) {
     }
 }
 
+void writeHighScore(char *score){
+    FILE *file = fopen("Highscore.txt", "w");
+    if(file != NULL){
+        fprintf(file, score);
+        fclose(file);
+    }
+}
+
+void saveHighScore(char *score){
+    char textBuffer[10];
+    FILE *file = fopen("Highscore.txt", "r");
+
+    if(file == NULL){
+        writeHighScore(score);
+        return;
+    }
+
+    while (fgets(textBuffer, sizeof(textBuffer), file) != NULL){
+        if(atoi(score) > atoi(textBuffer)){
+            writeHighScore(score);
+        }
+    } 
+    
+    fclose(file);
+}
 
 int main() {
     sfVideoMode mode = {1200, 900, 32};
     sfRenderWindow* window = sfRenderWindow_create(mode, "Janela CSFML", sfResize | sfClose, NULL);
     sfRenderWindow_setFramerateLimit(window, 60);
 
-    int enemySpawnTime = 0, shotCooldown = 0;
-    const int spawmCooldown = 30, shotCooldownMax = 20;
+    int enemySpawnTime = 0, shotCooldown = 0, score = 0;
+    const int spawmCooldown = 30, shotCooldownMax = 20, enemyCountMax = 5;
+    unsigned int enemyCount = 0;
+    char scoreStr[64], scoreBuffer[10];
 
     if (!window)
         return 1;
@@ -170,6 +197,16 @@ int main() {
     sfCircleShape_setRadius(player.playerSprite, 25);
     sfCircleShape_setFillColor(player.playerSprite, sfColor_fromRGB(100, 250, 50));
     sfCircleShape_setPosition(player.playerSprite, (sfVector2f){375, 275});
+
+    sfFont *font = sfFont_createFromFile("./assets/fontes/Arial.ttf");
+    if(!font)
+        return 1;
+
+    sfText *scoreText = sfText_create();
+    sfText_setFont(scoreText, font);
+    sfText_setCharacterSize(scoreText, 20);
+    sfText_setFillColor(scoreText, sfWhite);
+    sfText_setPosition(scoreText, (sfVector2f){1000, 20});
 
     BulletVector *bullets = createBulletVector(10);
     EnemyVector *enemies = createEnemyVector(20);
@@ -183,6 +220,7 @@ int main() {
                (event.type == sfEvtKeyPressed && event.key.code == sfKeyEscape))
             {
                 sfRenderWindow_close(window);
+                saveHighScore(itoa(score, scoreBuffer, sizeof(scoreBuffer)));
             }
         }
         sfVector2f pos = sfCircleShape_getPosition(player.playerSprite);
@@ -217,10 +255,11 @@ int main() {
         
         if(shotCooldown < shotCooldownMax) shotCooldown++;
 
-        if(enemySpawnTime >= spawmCooldown){
+        if(enemySpawnTime >= spawmCooldown && enemyCount < enemyCountMax){
             sfRectangleShape *newEnemy = createEnemy(1200, 900);
             pushBackEnemy(enemies, newEnemy);
 
+            enemyCount++;
             enemySpawnTime = 0;
         }
         enemySpawnTime++;
@@ -237,7 +276,8 @@ int main() {
             shotCooldown = 0;
         }
     
-
+        sprintf(scoreStr, "SCORE: %d", score);
+        sfText_setString(scoreText, scoreStr);
         for (int i = 0; i < bullets->size; i++) {
 
             sfCircleShape_move(bullets->bullets[i]->shape, bullets->bullets[i]->currentVelocity);
@@ -263,6 +303,9 @@ int main() {
                     eraseEnemyAtIndex(enemies, k);
                     i--; 
                     collided = 1;
+                    enemyCount--;
+                    score += 10;
+                    enemySpawnTime = 0;
                     break;
                 }
             }
@@ -278,7 +321,7 @@ int main() {
 
         for(int i = 0; i < enemies->size; i++) sfRenderWindow_drawRectangleShape(window, enemies->enemies[i], NULL);
         for(int i = 0; i < bullets->size; i++)sfRenderWindow_drawCircleShape(window, bullets->bullets[i]->shape, NULL);
-
+        sfRenderWindow_drawText(window, scoreText, NULL);
             
 
         sfRenderWindow_display(window); 
