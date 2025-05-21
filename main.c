@@ -151,6 +151,7 @@ void freeBulletVector(BulletVector *vector) {
     }
 }
 
+
 void writeHighScore(char *score){
     FILE *file = fopen("Highscore.txt", "w");
     if(file != NULL){
@@ -182,8 +183,8 @@ int main() {
     sfRenderWindow* window = sfRenderWindow_create(mode, "Janela CSFML", sfResize | sfClose, NULL);
     sfRenderWindow_setFramerateLimit(window, 60);
 
-    int enemySpawnTime = 0, shotCooldown = 0, score = 0;
-    const int spawmCooldown = 30, shotCooldownMax = 20, enemyCountMax = 5;
+    int enemySpawnTime = 0, shotCooldown = 0, score = 0, enemyCountMax = 5;
+    const int spawmCooldown = 30, shotCooldownMax = 20;
     unsigned int enemyCount = 0;
     char scoreStr[64], scoreBuffer[10];
 
@@ -191,7 +192,6 @@ int main() {
         return 1;
 
     Player player;
-
 
     player.playerSprite = sfCircleShape_create();
     sfCircleShape_setRadius(player.playerSprite, 25);
@@ -252,6 +252,10 @@ int main() {
         if(sfKeyboard_isKeyPressed(sfKeyW)) sfCircleShape_move(player.playerSprite, (sfVector2f){0.f, -10.f});
         
         if(sfKeyboard_isKeyPressed(sfKeyS)) sfCircleShape_move(player.playerSprite, (sfVector2f){0.f, 10.f});
+
+        
+
+
         
         if(shotCooldown < shotCooldownMax) shotCooldown++;
 
