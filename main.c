@@ -345,13 +345,13 @@ int main() {
         }
         
 
-        if(sfKeyboard_isKeyPressed(sfKeyA)) sfCircleShape_move(player->playerSprite, (sfVector2f){-10.f, 0.f});
+        if(sfKeyboard_isKeyPressed(sfKeyA) || sfKeyboard_isKeyPressed(sfKeyLeft)) sfCircleShape_move(player->playerSprite, (sfVector2f){-10.f, 0.f});
         
-        if(sfKeyboard_isKeyPressed(sfKeyD)) sfCircleShape_move(player->playerSprite, (sfVector2f){10.f, 0.f});
+        if(sfKeyboard_isKeyPressed(sfKeyD) || sfKeyboard_isKeyPressed(sfKeyRight)) sfCircleShape_move(player->playerSprite, (sfVector2f){10.f, 0.f});
         
-        if(sfKeyboard_isKeyPressed(sfKeyW)) sfCircleShape_move(player->playerSprite, (sfVector2f){0.f, -10.f});
+        if(sfKeyboard_isKeyPressed(sfKeyW) || sfKeyboard_isKeyPressed(sfKeyUp)) sfCircleShape_move(player->playerSprite, (sfVector2f){0.f, -10.f});
         
-        if(sfKeyboard_isKeyPressed(sfKeyS)) sfCircleShape_move(player->playerSprite, (sfVector2f){0.f, 10.f});
+        if(sfKeyboard_isKeyPressed(sfKeyS) || sfKeyboard_isKeyPressed(sfKeyDown)) sfCircleShape_move(player->playerSprite, (sfVector2f){0.f, 10.f});
 
         
         if(shotCooldown < shotCooldownMax) shotCooldown++;

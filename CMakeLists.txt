@@ -3,18 +3,17 @@ project(CSFMLProject C)
 
 set(CMAKE_C_STANDARD 17)
 
-# Caminho para CSFML
+
 include_directories("C:/CSFML/include")
 link_directories("C:/CSFML/lib/gcc")
 
-# Adicione os arquivos do projeto
+
 add_executable(main
     main.c
-    #interfaces/vector.c
-    #interfaces/pauseMenu.c
+    
 )
 
-# Linkar bibliotecas CSFML e outras do sistema
+
 target_link_libraries(main
     csfml-graphics
     csfml-window
@@ -25,5 +24,5 @@ target_link_libraries(main
     opengl32
 )
 
-# Suprimir warnings específicos (opcional)
+
 add_compile_options(-Wno-deprecated-declarations)
