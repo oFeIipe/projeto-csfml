@@ -48,11 +48,33 @@ EnemyVector* createEnemyVector(int capacity) {
     return vec;
 }
 
+void spawnEnemy(Enemy *enemy, int windowWidth, int windowHeight){
+    int side = rand() % 4;
+
+    if(side == 0) {
+        enemy->position.x = rand() % windowWidth;
+        enemy->position.y = -100;
+    }
+    if(side == 1) {
+        enemy->position.x = rand() % windowWidth;
+        enemy->position.y = windowHeight + 100;
+    }
+    if(side == 2) {
+        enemy->position.x = -100;
+        enemy->position.y = rand() % windowHeight;
+    }
+    if(side == 3) {
+        enemy->position.x = windowWidth + 100;
+        enemy->position.y = rand() % windowHeight;
+    }
+
+    sfSprite_setPosition(enemy->shape, enemy->position);
+}
+
 Enemy* createEnemy(Player *player, int windowWidth, int windowHeight) {
     Enemy *enemy = malloc(sizeof(Enemy));
     enemy->texture = sfTexture_createFromFile("./assets/sprites/zombie.png", NULL);
-    float distance, minDistance = 80;
-
+    float distance, minDistance = 100;
     if(!enemy->texture){
         printf("Nao foi possivel encontrar a imagem");
         exit(1);
@@ -62,16 +84,7 @@ Enemy* createEnemy(Player *player, int windowWidth, int windowHeight) {
 
     sfSprite_setScale(enemy->shape, (sfVector2f){0.25f, 0.25f});
 
-    
-    enemy->position.x = rand() % (windowWidth - 25);
-    enemy->position.y = rand() % (windowHeight - 25);
-    distance = (enemy->position.x - player->playerCenterPos.x) * 2 + (enemy->position.y - player->playerCenterPos.y) * 2;
-
-    if(minDistance > distance){
-        sfSprite_setPosition(enemy->shape, enemy->position);
-    }
-    
-
+    spawnEnemy(enemy, windowWidth, windowHeight);
     return enemy;
 }
 
@@ -239,15 +252,8 @@ sfText *createPlayerLifeText(sfFont *font){
     return playerLife;
 }
 
-void rotateEnemy(Enemy *enemy, Player *player){
-    sfVector2f distance;
+void rotateEnemy(Enemy *enemy, sfVector2f distance){
     float angle, angleDegress;
-
-    sfVector2f pos = sfCircleShape_getPosition(player->playerSprite);
-
-    distance.x = pos.x - enemy->position.x;
-    distance.y = pos.y - enemy->position.y;
-
     angle = atan2(distance.y, distance.x);
     angleDegress = angle * 180 / M_PI;
 
@@ -255,25 +261,26 @@ void rotateEnemy(Enemy *enemy, Player *player){
 }
 
 void enemyFollowPlayer(Enemy *enemy, Player *player, float deltaTime){
-
-    sfVector2f playerPos, enemyPos;
+    sfVector2f playerPos, enemyPos, distance;
+    
 
     playerPos = sfCircleShape_getPosition(player->playerSprite);
     enemyPos = sfSprite_getPosition(enemy->shape);
 
-    float dx = playerPos.x - enemyPos.x;
-    float dy = playerPos.y - enemyPos.y;
+    distance.x= playerPos.x - enemyPos.x;
+    distance.y = playerPos.y - enemyPos.y;
 
-    float length = sqrtf(dx * dx + dy * dy);
+    float length = sqrtf(distance.x * distance.x + distance.y * distance.y);
     if (length > 0) {
-        dx /= length;
-        dy /= length;
+        distance.x /= length;
+        distance.y /= length;
     }
 
-    enemyPos.x += dx * 3.5f * deltaTime * 60.f;
-    enemyPos.y += dy * 3.5f * deltaTime * 60.f;
+    enemyPos.x += distance.x * 3.5f * deltaTime * 60.f;
+    enemyPos.y += distance.y * 3.5f * deltaTime * 60.f;
 
-    rotateEnemy(enemy, player);
+   
+    rotateEnemy(enemy, distance);
     sfSprite_setPosition(enemy->shape, enemyPos);
     
 }
