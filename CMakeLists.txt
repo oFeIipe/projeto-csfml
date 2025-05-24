@@ -13,7 +13,6 @@ add_executable(main
     
 )
 
-
 target_link_libraries(main
     csfml-graphics
     csfml-window

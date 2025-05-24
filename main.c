@@ -5,8 +5,9 @@
 
 
 typedef struct
-{
-    sfCircleShape* playerSprite;
+{   
+    sfTexture* playerTexture;
+    sfSprite* playerSprite;
     sfVector2f mousePos;
     sfVector2f playerCenterPos;
     sfVector2f aimDirection;
@@ -119,10 +120,12 @@ void freeEnemyVector(EnemyVector* vector) {
 Player *createPlayer(){
     Player *player = malloc(sizeof(Player));
 
-    player->playerSprite = sfCircleShape_create();
-    sfCircleShape_setRadius(player->playerSprite, 25);
-    sfCircleShape_setFillColor(player->playerSprite, sfColor_fromRGB(100, 250, 50));
-    sfCircleShape_setPosition(player->playerSprite, (sfVector2f){600, 500});
+    player->playerTexture = sfTexture_createFromFile("./assets/sprites/player.png", NULL);
+
+    player->playerSprite = sfSprite_create();
+    sfSprite_setTexture(player->playerSprite, player->playerTexture, sfTrue);
+    sfSprite_setScale(player->playerSprite, (sfVector2f){0.3f, 0.3f});
+    sfSprite_setPosition(player->playerSprite, (sfVector2f){600, 500});
 
     return player;
 }
@@ -260,14 +263,22 @@ void rotateEnemy(Enemy *enemy, sfVector2f distance){
     sfSprite_setRotation(enemy->shape, angleDegress);
 }
 
+void rotatePlayer(Player *player, sfVector2f distance){
+    float angle, angleDegress;
+    angle = atan2(distance.y, distance.x);
+    angleDegress = angle * 180 / M_PI;
+
+    sfSprite_setRotation(player->playerSprite, angleDegress);
+}
+
 void enemyFollowPlayer(Enemy *enemy, Player *player, float deltaTime){
     sfVector2f playerPos, enemyPos, distance;
     
 
-    playerPos = sfCircleShape_getPosition(player->playerSprite);
+    playerPos = sfSprite_getPosition(player->playerSprite);
     enemyPos = sfSprite_getPosition(enemy->shape);
 
-    distance.x= playerPos.x - enemyPos.x;
+    distance.x = playerPos.x - enemyPos.x;
     distance.y = playerPos.y - enemyPos.y;
 
     float length = sqrtf(distance.x * distance.x + distance.y * distance.y);
@@ -276,13 +287,27 @@ void enemyFollowPlayer(Enemy *enemy, Player *player, float deltaTime){
         distance.y /= length;
     }
 
-    enemyPos.x += distance.x * 3.5f * deltaTime * 60.f;
-    enemyPos.y += distance.y * 3.5f * deltaTime * 60.f;
+    enemyPos.x += distance.x * 2.5f * deltaTime * 60.f;
+    enemyPos.y += distance.y * 2.5f * deltaTime * 60.f;
 
    
     rotateEnemy(enemy, distance);
     sfSprite_setPosition(enemy->shape, enemyPos);
     
+}
+
+sfSprite *createBg(int windowWidth, int windowHeight){
+    sfTexture *bgImage = sfTexture_createFromFile("./assets/sprites/bg.jpeg", NULL);
+
+    if(!bgImage) printf("NÃO CARREGOU");
+
+    sfSprite *bgSprite = sfSprite_create();
+
+    sfSprite_setTexture(bgSprite, bgImage, sfTrue);
+    sfSprite_setScale(bgSprite, (sfVector2f){1.f, 1.f});
+    sfSprite_setPosition(bgSprite, (sfVector2f){0, 0});
+
+    return bgSprite;
 }
 
 int main() {
@@ -312,6 +337,10 @@ int main() {
     BulletVector *bullets = createBulletVector(10);
     EnemyVector *enemies = createEnemyVector(20);
 
+    sfSprite *bg = createBg(1200, 900);
+
+    
+
     while (sfRenderWindow_isOpen(window))
     {
         sfEvent event;
@@ -322,12 +351,12 @@ int main() {
                 terminarJogo(window, score, scoreBuffer);
             }
         }
-        float deltaTime = sfTime_asSeconds(sfClock_restart(clock));
-        sfVector2f pos = sfCircleShape_getPosition(player->playerSprite);
-        float radius = sfCircleShape_getRadius(player->playerSprite);
         
-        player->playerCenterPos.x = pos.x + radius;
-        player->playerCenterPos.y = pos.y + radius;
+        float deltaTime = sfTime_asSeconds(sfClock_restart(clock));
+        sfVector2f pos = sfSprite_getPosition(player->playerSprite);
+        
+        player->playerCenterPos.x = pos.x;
+        player->playerCenterPos.y = pos.y;
 
         sfVector2i pixelPos = sfMouse_getPositionRenderWindow(window);
         player->mousePos = sfRenderWindow_mapPixelToCoords(window, pixelPos, NULL);
@@ -344,14 +373,15 @@ int main() {
             player->aimDirectionNormalize.y = 0;
         }
         
+        rotatePlayer(player, player->aimDirectionNormalize);
 
-        if(sfKeyboard_isKeyPressed(sfKeyA) || sfKeyboard_isKeyPressed(sfKeyLeft)) sfCircleShape_move(player->playerSprite, (sfVector2f){-10.f, 0.f});
+        if(sfKeyboard_isKeyPressed(sfKeyA) || sfKeyboard_isKeyPressed(sfKeyLeft)) sfSprite_move(player->playerSprite, (sfVector2f){-7.f, 0.f});
         
-        if(sfKeyboard_isKeyPressed(sfKeyD) || sfKeyboard_isKeyPressed(sfKeyRight)) sfCircleShape_move(player->playerSprite, (sfVector2f){10.f, 0.f});
+        if(sfKeyboard_isKeyPressed(sfKeyD) || sfKeyboard_isKeyPressed(sfKeyRight)) sfSprite_move(player->playerSprite, (sfVector2f){7.f, 0.f});
         
-        if(sfKeyboard_isKeyPressed(sfKeyW) || sfKeyboard_isKeyPressed(sfKeyUp)) sfCircleShape_move(player->playerSprite, (sfVector2f){0.f, -10.f});
+        if(sfKeyboard_isKeyPressed(sfKeyW) || sfKeyboard_isKeyPressed(sfKeyUp)) sfSprite_move(player->playerSprite, (sfVector2f){0.f, -7.f});
         
-        if(sfKeyboard_isKeyPressed(sfKeyS) || sfKeyboard_isKeyPressed(sfKeyDown)) sfCircleShape_move(player->playerSprite, (sfVector2f){0.f, 10.f});
+        if(sfKeyboard_isKeyPressed(sfKeyS) || sfKeyboard_isKeyPressed(sfKeyDown)) sfSprite_move(player->playerSprite, (sfVector2f){0.f, 7.f});
 
         
         if(shotCooldown < shotCooldownMax) shotCooldown++;
@@ -403,7 +433,7 @@ int main() {
                 sfFloatRect bulletBounds = sfCircleShape_getGlobalBounds(bullets->bullets[i]->shape);
                 sfFloatRect enemyBounds = sfSprite_getGlobalBounds(enemies->enemies[k]->shape);
                 
-                sfFloatRect playerBounds = sfCircleShape_getGlobalBounds(player->playerSprite);
+                sfFloatRect playerBounds = sfSprite_getGlobalBounds(player->playerSprite);
                 
                 if (sfFloatRect_intersects(&bulletBounds, &enemyBounds, NULL)) {
                     eraseBulletAtIndex(bullets, i);
@@ -424,7 +454,7 @@ int main() {
         for (int i = 0; i < enemies->size; i++){
             sfFloatRect enemyBounds = sfSprite_getGlobalBounds(enemies->enemies[i]->shape);
 
-            sfFloatRect playerBounds = sfCircleShape_getGlobalBounds(player->playerSprite);
+            sfFloatRect playerBounds = sfSprite_getGlobalBounds(player->playerSprite);
 
             if(sfFloatRect_intersects(&playerBounds, &enemyBounds, NULL)){
                 perdaVidaCooldown--;
@@ -435,9 +465,10 @@ int main() {
                 }
             }
         }
-
+        
         sfRenderWindow_clear(window, sfBlack);
-        sfRenderWindow_drawCircleShape(window, player->playerSprite, NULL); 
+        sfRenderWindow_drawSprite(window, bg, NULL);
+        sfRenderWindow_drawSprite(window, player->playerSprite, NULL); 
 
         for(int i = 0; i < enemies->size; i++) {
             sfRenderWindow_drawSprite(window, enemies->enemies[i]->shape, NULL);
@@ -450,14 +481,16 @@ int main() {
         sfRenderWindow_drawText(window, playerLife, NULL);
             
         sfRenderWindow_display(window); 
-        if(vida <= 0) terminarJogo(window, score, scoreBuffer);
+        if(vida <= 0){
+            terminarJogo(window, score, scoreBuffer);
+        }
+
     }
 
     freeBulletVector(bullets);
     freeEnemyVector(enemies);
-    sfCircleShape_destroy(player->playerSprite);
+    sfSprite_destroy(player->playerSprite);
     sfRenderWindow_destroy(window);
 
     return 0;
-
 }
