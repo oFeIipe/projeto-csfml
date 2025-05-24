@@ -48,9 +48,10 @@ EnemyVector* createEnemyVector(int capacity) {
     return vec;
 }
 
-Enemy* createEnemy(int windowWidth, int windowHeight) {
+Enemy* createEnemy(Player *player, int windowWidth, int windowHeight) {
     Enemy *enemy = malloc(sizeof(Enemy));
     enemy->texture = sfTexture_createFromFile("./assets/sprites/zombie.png", NULL);
+    float distance, minDistance = 80;
 
     if(!enemy->texture){
         printf("Nao foi possivel encontrar a imagem");
@@ -59,11 +60,17 @@ Enemy* createEnemy(int windowWidth, int windowHeight) {
     enemy->shape = sfSprite_create();
     sfSprite_setTexture(enemy->shape, enemy->texture, sfTrue);
 
-    sfSprite_setScale(enemy->shape, (sfVector2f){0.3f, 0.3f});
+    sfSprite_setScale(enemy->shape, (sfVector2f){0.25f, 0.25f});
 
-    enemy->position.x = rand() % (windowWidth - 40);
-    enemy->position.y = rand() % (windowHeight - 40);
-    sfSprite_setPosition(enemy->shape, enemy->position);
+    
+    enemy->position.x = rand() % (windowWidth - 25);
+    enemy->position.y = rand() % (windowHeight - 25);
+    distance = (enemy->position.x - player->playerCenterPos.x) * 2 + (enemy->position.y - player->playerCenterPos.y) * 2;
+
+    if(minDistance > distance){
+        sfSprite_setPosition(enemy->shape, enemy->position);
+    }
+    
 
     return enemy;
 }
@@ -95,6 +102,16 @@ void freeEnemyVector(EnemyVector* vector) {
     }
     free(vector->enemies);
     free(vector);
+}
+Player *createPlayer(){
+    Player *player = malloc(sizeof(Player));
+
+    player->playerSprite = sfCircleShape_create();
+    sfCircleShape_setRadius(player->playerSprite, 25);
+    sfCircleShape_setFillColor(player->playerSprite, sfColor_fromRGB(100, 250, 50));
+    sfCircleShape_setPosition(player->playerSprite, (sfVector2f){600, 500});
+
+    return player;
 }
 
 Bullet * createBullet(float radius){
@@ -200,11 +217,48 @@ void terminarJogo(sfRenderWindow *window, int score, char *scoreBuffer){
 }
 
 
-void enemyFollowPlayer(Enemy *enemy, sfCircleShape *player, float deltaTime){
+sfText *createScoreText(sfFont *font){
+    sfText *scoreText= sfText_create();
+
+    sfText_setFont(scoreText, font);
+    sfText_setCharacterSize(scoreText, 20);
+    sfText_setFillColor(scoreText, sfWhite);
+    sfText_setPosition(scoreText, (sfVector2f){1000, 20});
+    
+    return scoreText;
+}
+
+sfText *createPlayerLifeText(sfFont *font){
+    sfText *playerLife = sfText_create();
+
+    sfText_setFont(playerLife, font);
+    sfText_setCharacterSize(playerLife, 20);
+    sfText_setFillColor(playerLife, sfWhite);
+    sfText_setPosition(playerLife, (sfVector2f){100, 20});
+    
+    return playerLife;
+}
+
+void rotateEnemy(Enemy *enemy, Player *player){
+    sfVector2f distance;
+    float angle, angleDegress;
+
+    sfVector2f pos = sfCircleShape_getPosition(player->playerSprite);
+
+    distance.x = pos.x - enemy->position.x;
+    distance.y = pos.y - enemy->position.y;
+
+    angle = atan2(distance.y, distance.x);
+    angleDegress = angle * 180 / M_PI;
+
+    sfSprite_setRotation(enemy->shape, angleDegress);
+}
+
+void enemyFollowPlayer(Enemy *enemy, Player *player, float deltaTime){
 
     sfVector2f playerPos, enemyPos;
 
-    playerPos = sfCircleShape_getPosition(player);
+    playerPos = sfCircleShape_getPosition(player->playerSprite);
     enemyPos = sfSprite_getPosition(enemy->shape);
 
     float dx = playerPos.x - enemyPos.x;
@@ -216,8 +270,10 @@ void enemyFollowPlayer(Enemy *enemy, sfCircleShape *player, float deltaTime){
         dy /= length;
     }
 
-    enemyPos.x += dx * 4.0f * deltaTime * 60.f;
-    enemyPos.y += dy * 4.0f * deltaTime * 60.f;
+    enemyPos.x += dx * 3.5f * deltaTime * 60.f;
+    enemyPos.y += dy * 3.5f * deltaTime * 60.f;
+
+    rotateEnemy(enemy, player);
     sfSprite_setPosition(enemy->shape, enemyPos);
     
 }
@@ -227,32 +283,24 @@ int main() {
     sfRenderWindow* window = sfRenderWindow_create(mode, "Janela CSFML", sfResize | sfClose, NULL);
     sfRenderWindow_setFramerateLimit(window, 60);
 
-    int enemySpawnTime = 0, shotCooldown = 0, score = 0, enemyCountMax = 5, vida = 10, perdaVidaCooldown = 30;
+    int enemySpawnTime = 0, shotCooldown = 0, score = 0, enemyCountMax = 5, vida = 100, perdaVidaCooldown = 10;
     const int spawmCooldown = 30, shotCooldownMax = 20;
     unsigned int enemyCount = 0;
-    char scoreStr[64], scoreBuffer[10];
+    char scoreStr[64], scoreBuffer[10], vidaStr[3];
 
     sfClock *clock = sfClock_create();
 
     if (!window)
         return 1;
 
-    Player player;
-
-    player.playerSprite = sfCircleShape_create();
-    sfCircleShape_setRadius(player.playerSprite, 25);
-    sfCircleShape_setFillColor(player.playerSprite, sfColor_fromRGB(100, 250, 50));
-    sfCircleShape_setPosition(player.playerSprite, (sfVector2f){375, 275});
+    Player * player = createPlayer();
 
     sfFont *font = sfFont_createFromFile("./assets/fontes/Arial.ttf");
     if(!font)
         return 1;
 
-    sfText *scoreText = sfText_create();
-    sfText_setFont(scoreText, font);
-    sfText_setCharacterSize(scoreText, 20);
-    sfText_setFillColor(scoreText, sfWhite);
-    sfText_setPosition(scoreText, (sfVector2f){1000, 20});
+    sfText *scoreText = createScoreText(font);
+    sfText *playerLife = createPlayerLifeText(font);
 
     BulletVector *bullets = createBulletVector(10);
     EnemyVector *enemies = createEnemyVector(20);
@@ -268,41 +316,41 @@ int main() {
             }
         }
         float deltaTime = sfTime_asSeconds(sfClock_restart(clock));
-        sfVector2f pos = sfCircleShape_getPosition(player.playerSprite);
-        float radius = sfCircleShape_getRadius(player.playerSprite);
+        sfVector2f pos = sfCircleShape_getPosition(player->playerSprite);
+        float radius = sfCircleShape_getRadius(player->playerSprite);
         
-        player.playerCenterPos.x = pos.x + radius;
-        player.playerCenterPos.y = pos.y + radius;
+        player->playerCenterPos.x = pos.x + radius;
+        player->playerCenterPos.y = pos.y + radius;
 
         sfVector2i pixelPos = sfMouse_getPositionRenderWindow(window);
-        player.mousePos = sfRenderWindow_mapPixelToCoords(window, pixelPos, NULL);
+        player->mousePos = sfRenderWindow_mapPixelToCoords(window, pixelPos, NULL);
 
-        player.aimDirection.x = player.mousePos.x - player.playerCenterPos.x;
-        player.aimDirection.y = player.mousePos.y - player.playerCenterPos.y;
+        player->aimDirection.x = player->mousePos.x - player->playerCenterPos.x;
+        player->aimDirection.y = player->mousePos.y - player->playerCenterPos.y;
 
-       float length = sqrt(player.aimDirection.x * player.aimDirection.x + player.aimDirection.y * player.aimDirection.y);
+       float length = sqrt(player->aimDirection.x * player->aimDirection.x + player->aimDirection.y * player->aimDirection.y);
         if (length != 0) {
-            player.aimDirectionNormalize.x = player.aimDirection.x / length;
-            player.aimDirectionNormalize.y = player.aimDirection.y / length;
+            player->aimDirectionNormalize.x = player->aimDirection.x / length;
+            player->aimDirectionNormalize.y = player->aimDirection.y / length;
         } else {
-            player.aimDirectionNormalize.x = 0;
-            player.aimDirectionNormalize.y = 0;
+            player->aimDirectionNormalize.x = 0;
+            player->aimDirectionNormalize.y = 0;
         }
         
 
-        if(sfKeyboard_isKeyPressed(sfKeyA)) sfCircleShape_move(player.playerSprite, (sfVector2f){-10.f, 0.f});
+        if(sfKeyboard_isKeyPressed(sfKeyA)) sfCircleShape_move(player->playerSprite, (sfVector2f){-10.f, 0.f});
         
-        if(sfKeyboard_isKeyPressed(sfKeyD)) sfCircleShape_move(player.playerSprite, (sfVector2f){10.f, 0.f});
+        if(sfKeyboard_isKeyPressed(sfKeyD)) sfCircleShape_move(player->playerSprite, (sfVector2f){10.f, 0.f});
         
-        if(sfKeyboard_isKeyPressed(sfKeyW)) sfCircleShape_move(player.playerSprite, (sfVector2f){0.f, -10.f});
+        if(sfKeyboard_isKeyPressed(sfKeyW)) sfCircleShape_move(player->playerSprite, (sfVector2f){0.f, -10.f});
         
-        if(sfKeyboard_isKeyPressed(sfKeyS)) sfCircleShape_move(player.playerSprite, (sfVector2f){0.f, 10.f});
+        if(sfKeyboard_isKeyPressed(sfKeyS)) sfCircleShape_move(player->playerSprite, (sfVector2f){0.f, 10.f});
 
         
         if(shotCooldown < shotCooldownMax) shotCooldown++;
 
         if(enemySpawnTime >= spawmCooldown && enemyCount < enemyCountMax){
-            Enemy *newEnemy = createEnemy(1200, 900);
+            Enemy *newEnemy = createEnemy(player,1200, 900);
             pushBackEnemy(enemies, newEnemy);
 
             enemyCount++;
@@ -314,9 +362,9 @@ int main() {
         if(sfMouse_isButtonPressed(sfMouseLeft) && shotCooldown >= shotCooldownMax){
             Bullet *newBullet = createBullet(5);
 
-            sfCircleShape_setPosition(newBullet->shape, player.playerCenterPos);
-            newBullet->currentVelocity.x = player.aimDirectionNormalize.x * newBullet->maxSpeed;
-            newBullet->currentVelocity.y = player.aimDirectionNormalize.y * newBullet->maxSpeed;
+            sfCircleShape_setPosition(newBullet->shape, player->playerCenterPos);
+            newBullet->currentVelocity.x = player->aimDirectionNormalize.x * newBullet->maxSpeed;
+            newBullet->currentVelocity.y = player->aimDirectionNormalize.y * newBullet->maxSpeed;
 
             pushBulletBack(bullets, newBullet);
             shotCooldown = 0;
@@ -324,6 +372,10 @@ int main() {
     
         sprintf(scoreStr, "SCORE: %d", score);
         sfText_setString(scoreText, scoreStr);
+
+        sprintf(vidaStr, "Vida: %d", vida);
+        sfText_setString(playerLife, vidaStr);
+
         for (int i = 0; i < bullets->size; i++) {
 
             sfCircleShape_move(bullets->bullets[i]->shape, bullets->bullets[i]->currentVelocity);
@@ -343,8 +395,8 @@ int main() {
             for (int k = 0; k < enemies->size; k++) {
                 sfFloatRect bulletBounds = sfCircleShape_getGlobalBounds(bullets->bullets[i]->shape);
                 sfFloatRect enemyBounds = sfSprite_getGlobalBounds(enemies->enemies[k]->shape);
-
-                sfFloatRect playerBounds = sfCircleShape_getGlobalBounds(player.playerSprite);
+                
+                sfFloatRect playerBounds = sfCircleShape_getGlobalBounds(player->playerSprite);
                 
                 if (sfFloatRect_intersects(&bulletBounds, &enemyBounds, NULL)) {
                     eraseBulletAtIndex(bullets, i);
@@ -365,28 +417,30 @@ int main() {
         for (int i = 0; i < enemies->size; i++){
             sfFloatRect enemyBounds = sfSprite_getGlobalBounds(enemies->enemies[i]->shape);
 
-            sfFloatRect playerBounds = sfCircleShape_getGlobalBounds(player.playerSprite);
+            sfFloatRect playerBounds = sfCircleShape_getGlobalBounds(player->playerSprite);
 
             if(sfFloatRect_intersects(&playerBounds, &enemyBounds, NULL)){
                 perdaVidaCooldown--;
                 if(perdaVidaCooldown == 0){
                     vida--;
-                    perdaVidaCooldown = 30;
+                    perdaVidaCooldown = 10;
                     printf("Vida: %d\n", vida);
                 }
             }
         }
 
         sfRenderWindow_clear(window, sfBlack);
-        sfRenderWindow_drawCircleShape(window, player.playerSprite, NULL); 
+        sfRenderWindow_drawCircleShape(window, player->playerSprite, NULL); 
 
         for(int i = 0; i < enemies->size; i++) {
             sfRenderWindow_drawSprite(window, enemies->enemies[i]->shape, NULL);
-            enemyFollowPlayer(enemies->enemies[i], player.playerSprite, deltaTime);
+            enemyFollowPlayer(enemies->enemies[i], player, deltaTime);
+            
         }
   
         for(int i = 0; i < bullets->size; i++) sfRenderWindow_drawCircleShape(window, bullets->bullets[i]->shape, NULL);
         sfRenderWindow_drawText(window, scoreText, NULL);
+        sfRenderWindow_drawText(window, playerLife, NULL);
             
         sfRenderWindow_display(window); 
         if(vida <= 0) terminarJogo(window, score, scoreBuffer);
@@ -394,7 +448,7 @@ int main() {
 
     freeBulletVector(bullets);
     freeEnemyVector(enemies);
-    sfCircleShape_destroy(player.playerSprite);
+    sfCircleShape_destroy(player->playerSprite);
     sfRenderWindow_destroy(window);
 
     return 0;
