@@ -233,29 +233,6 @@ void terminarJogo(sfRenderWindow *window, int score, char *scoreBuffer){
     saveHighScore(itoa(score, scoreBuffer, 10));
 }
 
-
-sfText *createScoreText(sfFont *font){
-    sfText *scoreText= sfText_create();
-
-    sfText_setFont(scoreText, font);
-    sfText_setCharacterSize(scoreText, 20);
-    sfText_setFillColor(scoreText, sfWhite);
-    sfText_setPosition(scoreText, (sfVector2f){1000, 20});
-    
-    return scoreText;
-}
-
-sfText *createPlayerLifeText(sfFont *font){
-    sfText *playerLife = sfText_create();
-
-    sfText_setFont(playerLife, font);
-    sfText_setCharacterSize(playerLife, 20);
-    sfText_setFillColor(playerLife, sfWhite);
-    sfText_setPosition(playerLife, (sfVector2f){100, 20});
-    
-    return playerLife;
-}
-
 void rotateEnemy(Enemy *enemy, sfVector2f distance){
     float angle, angleDegress;
     angle = atan2(distance.y, distance.x);
@@ -272,9 +249,9 @@ void rotatePlayer(Player *player, sfVector2f distance){
     sfSprite_setRotation(player->playerSprite, angleDegress);
 }
 
-void enemyFollowPlayer(Enemy *enemy, Player *player, float deltaTime){
+void enemyFollowPlayer(Enemy *enemy, Player *player, sfClock *clock){
     sfVector2f playerPos, enemyPos, distance;
-    
+    float deltaTime = sfTime_asSeconds(sfClock_restart(clock));
 
     playerPos = sfSprite_getPosition(player->playerSprite);
     enemyPos = sfSprite_getPosition(enemy->shape);
@@ -300,14 +277,33 @@ void enemyFollowPlayer(Enemy *enemy, Player *player, float deltaTime){
     }
 }
 
-sfText *createTimer(sfFont *font){
-    sfText *timer = sfText_create();
-    sfText_setPosition(timer, (sfVector2f){500, 400});
-    sfText_setFillColor(timer, sfWhite);
-    sfText_setCharacterSize(timer, 50);
-    sfText_setFont(timer, font);
+sfText *createText(sfFont *font, sfVector2f posicao, sfColor cor, int size){
+    sfText *text = sfText_create();
+    sfText_setPosition(text, posicao);
+    sfText_setFillColor(text, cor);
+    sfText_setCharacterSize(text, size);
+    sfText_setFont(text, font);
 
-    return timer;
+    return text;
+}
+
+void getPlayerAim(sfRenderWindow *window, Player *player){
+    sfVector2f pos = sfSprite_getPosition(player->playerSprite);
+        
+    player->playerCenterPos.x = pos.x;
+    player->playerCenterPos.y = pos.y;
+
+    sfVector2i pixelPos = sfMouse_getPositionRenderWindow(window);
+    player->mousePos = sfRenderWindow_mapPixelToCoords(window, pixelPos, NULL);
+
+    player->aimDirection.x = player->mousePos.x - player->playerCenterPos.x;
+    player->aimDirection.y = player->mousePos.y - player->playerCenterPos.y;
+
+    float length = sqrt(player->aimDirection.x * player->aimDirection.x + player->aimDirection.y * player->aimDirection.y);
+    if (length != 0) {
+        player->aimDirectionNormalize.x = player->aimDirection.x / length;
+        player->aimDirectionNormalize.y = player->aimDirection.y / length;
+    } 
 }
 
 void updateTimer(sfText *timer, sfClock *clock, char *tempoStr){
@@ -371,20 +367,18 @@ int main() {
 
     Player *player = createPlayer();
     
-    sfFont *font = sfFont_createFromFile("./assets/fontes/Arial.ttf");
+    sfFont *font = sfFont_createFromFile("./assets/fontes/Headliner45.ttf");
     if(!font)
         return 1;
 
-    sfText *timer = createTimer(font);
-    sfText *scoreText = createScoreText(font);
-    sfText *playerLife = createPlayerLifeText(font);
+    sfText *timer = createText(font, (sfVector2f){100, 800}, sfYellow, 60);
+    sfText *scoreText = createText(font, (sfVector2f){1050, 20}, sfYellow, 34);
+    sfText *playerLife = createText(font, (sfVector2f){100, 20}, sfYellow, 34);
 
     BulletVector *bullets = createBulletVector(10);
     EnemyVector *enemies = createEnemyVector(20);
 
     sfSprite *bg = createBg(1200, 900);
-
-    
 
     while (sfRenderWindow_isOpen(window))
     {
@@ -398,27 +392,8 @@ int main() {
         }
         updateTimer(timer, clock2, tempoStr);
         
-        float deltaTime = sfTime_asSeconds(sfClock_restart(clock));
-        sfVector2f pos = sfSprite_getPosition(player->playerSprite);
-        
-        player->playerCenterPos.x = pos.x;
-        player->playerCenterPos.y = pos.y;
+        getPlayerAim(window, player);
 
-        sfVector2i pixelPos = sfMouse_getPositionRenderWindow(window);
-        player->mousePos = sfRenderWindow_mapPixelToCoords(window, pixelPos, NULL);
-
-        player->aimDirection.x = player->mousePos.x - player->playerCenterPos.x;
-        player->aimDirection.y = player->mousePos.y - player->playerCenterPos.y;
-
-       float length = sqrt(player->aimDirection.x * player->aimDirection.x + player->aimDirection.y * player->aimDirection.y);
-        if (length != 0) {
-            player->aimDirectionNormalize.x = player->aimDirection.x / length;
-            player->aimDirectionNormalize.y = player->aimDirection.y / length;
-        } else {
-            player->aimDirectionNormalize.x = 0;
-            player->aimDirectionNormalize.y = 0;
-        }
-        
         rotatePlayer(player, player->aimDirectionNormalize);
 
         if(sfKeyboard_isKeyPressed(sfKeyA) || sfKeyboard_isKeyPressed(sfKeyLeft)) sfSprite_move(player->playerSprite, (sfVector2f){-7.f, 0.f});
@@ -516,7 +491,7 @@ int main() {
 
         for(int i = 0; i < enemies->size; i++) {
             sfRenderWindow_drawSprite(window, enemies->enemies[i]->shape, NULL);
-            enemyFollowPlayer(enemies->enemies[i], player, deltaTime);
+            enemyFollowPlayer(enemies->enemies[i], player, clock);
         }
   
         for(int i = 0; i < bullets->size; i++) sfRenderWindow_drawCircleShape(window, bullets->bullets[i]->shape, NULL);
