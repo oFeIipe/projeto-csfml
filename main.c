@@ -364,6 +364,7 @@ int main() {
     char scoreStr[64], scoreBuffer[10], vidaStr[3], tempoStr[6];
 
     sfClock *clock = sfClock_create();
+    sfClock *clock2 = sfClock_create();
 
     if (!window)
         return 1;
@@ -395,7 +396,7 @@ int main() {
                 terminarJogo(window, score, scoreBuffer);
             }
         }
-        //updateTimer(timer, clock, tempoStr);
+        updateTimer(timer, clock2, tempoStr);
         
         float deltaTime = sfTime_asSeconds(sfClock_restart(clock));
         sfVector2f pos = sfSprite_getPosition(player->playerSprite);
@@ -521,7 +522,7 @@ int main() {
         for(int i = 0; i < bullets->size; i++) sfRenderWindow_drawCircleShape(window, bullets->bullets[i]->shape, NULL);
         sfRenderWindow_drawText(window, scoreText, NULL);
         sfRenderWindow_drawText(window, playerLife, NULL);
-        //sfRenderWindow_drawText(window, timer, NULL);
+        sfRenderWindow_drawText(window, timer, NULL);
             
         sfRenderWindow_display(window); 
         if(vida <= 0){
