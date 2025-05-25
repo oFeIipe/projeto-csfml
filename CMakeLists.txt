@@ -10,7 +10,6 @@ link_directories("C:/CSFML/lib/gcc")
 
 add_executable(main
     main.c
-    
 )
 
 target_link_libraries(main

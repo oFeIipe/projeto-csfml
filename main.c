@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 
+#define PI 3.14159265359
 
 typedef struct
 {   
@@ -204,7 +205,7 @@ void freeBulletVector(BulletVector *vector) {
 void writeHighScore(char *score){
     FILE *file = fopen("Highscore.txt", "w");
     if(file != NULL){
-        fprintf(file, score);
+        fprintf(file, "%s",score);
         fclose(file);
     }
 }
@@ -229,7 +230,7 @@ void saveHighScore(char *score){
 
 void terminarJogo(sfRenderWindow *window, int score, char *scoreBuffer){
     sfRenderWindow_close(window);
-    saveHighScore(itoa(score, scoreBuffer, sizeof(scoreBuffer)));
+    saveHighScore(itoa(score, scoreBuffer, 10));
 }
 
 
@@ -258,7 +259,7 @@ sfText *createPlayerLifeText(sfFont *font){
 void rotateEnemy(Enemy *enemy, sfVector2f distance){
     float angle, angleDegress;
     angle = atan2(distance.y, distance.x);
-    angleDegress = angle * 180 / M_PI;
+    angleDegress = angle * 180 / PI;
 
     sfSprite_setRotation(enemy->shape, angleDegress);
 }
@@ -266,7 +267,7 @@ void rotateEnemy(Enemy *enemy, sfVector2f distance){
 void rotatePlayer(Player *player, sfVector2f distance){
     float angle, angleDegress;
     angle = atan2(distance.y, distance.x);
-    angleDegress = angle * 180 / M_PI;
+    angleDegress = angle * 180 / PI;
 
     sfSprite_setRotation(player->playerSprite, angleDegress);
 }
@@ -290,21 +291,63 @@ void enemyFollowPlayer(Enemy *enemy, Player *player, float deltaTime){
     enemyPos.x += distance.x * 2.5f * deltaTime * 60.f;
     enemyPos.y += distance.y * 2.5f * deltaTime * 60.f;
 
-   
-    rotateEnemy(enemy, distance);
-    sfSprite_setPosition(enemy->shape, enemyPos);
+    sfFloatRect playerBounds = sfSprite_getGlobalBounds(player->playerSprite);
+    sfFloatRect enemyBounds = sfSprite_getGlobalBounds(enemy->shape);
+
+    if(!sfFloatRect_intersects(&playerBounds, &enemyBounds, NULL)){
+        rotateEnemy(enemy, distance);
+        sfSprite_setPosition(enemy->shape, enemyPos);
+    }
+}
+
+sfText *createTimer(sfFont *font){
+    sfText *timer = sfText_create();
+    sfText_setPosition(timer, (sfVector2f){500, 400});
+    sfText_setFillColor(timer, sfWhite);
+    sfText_setCharacterSize(timer, 50);
+    sfText_setFont(timer, font);
+
+    return timer;
+}
+
+void updateTimer(sfText *timer, sfClock *clock, char *tempoStr){
+    int minutos, tempoEmSegundos;
+    sfTime tempoPercorrido;
+
+    tempoPercorrido = sfClock_getElapsedTime(clock);
+    tempoEmSegundos = sfTime_asSeconds(tempoPercorrido);
+
+    minutos = tempoEmSegundos / 60;
+    tempoEmSegundos = tempoEmSegundos % 60;
     
+    if(tempoEmSegundos < 10 && minutos < 10){
+        sprintf(tempoStr, "0%d:0%d", minutos, tempoEmSegundos);
+    }
+    else if(tempoEmSegundos < 10){
+        sprintf(tempoStr, "%d:0%d", minutos, tempoEmSegundos);
+    }
+    else if(minutos < 10){
+        sprintf(tempoStr, "0%d:%d", minutos, tempoEmSegundos);
+    }
+    else{
+        sprintf(tempoStr, "%d:%d", minutos, tempoEmSegundos);
+    }
+    
+    sfText_setString(timer, tempoStr);
 }
 
 sfSprite *createBg(int windowWidth, int windowHeight){
     sfTexture *bgImage = sfTexture_createFromFile("./assets/sprites/bg.jpeg", NULL);
 
-    if(!bgImage) printf("NÃO CARREGOU");
+    if(!bgImage){
+        printf("Imagem nao carregou");
+        exit(1);
+    } 
 
     sfSprite *bgSprite = sfSprite_create();
 
     sfSprite_setTexture(bgSprite, bgImage, sfTrue);
-    sfSprite_setScale(bgSprite, (sfVector2f){1.f, 1.f});
+    sfSprite_setScale(bgSprite, (sfVector2f){1.2f, 1.2f});
     sfSprite_setPosition(bgSprite, (sfVector2f){0, 0});
 
     return bgSprite;
@@ -312,25 +355,26 @@ sfSprite *createBg(int windowWidth, int windowHeight){
 
 int main() {
     sfVideoMode mode = {1200, 900, 32};
-    sfRenderWindow* window = sfRenderWindow_create(mode, "Janela CSFML", sfResize | sfClose, NULL);
+    sfRenderWindow* window = sfRenderWindow_create(mode, "Top down shooter", sfResize | sfClose, NULL);
     sfRenderWindow_setFramerateLimit(window, 60);
 
     int enemySpawnTime = 0, shotCooldown = 0, score = 0, enemyCountMax = 5, vida = 100, perdaVidaCooldown = 10;
     const int spawmCooldown = 30, shotCooldownMax = 20;
     unsigned int enemyCount = 0;
-    char scoreStr[64], scoreBuffer[10], vidaStr[3];
+    char scoreStr[64], scoreBuffer[10], vidaStr[3], tempoStr[6];
 
     sfClock *clock = sfClock_create();
 
     if (!window)
         return 1;
 
-    Player * player = createPlayer();
-
+    Player *player = createPlayer();
+    
     sfFont *font = sfFont_createFromFile("./assets/fontes/Arial.ttf");
     if(!font)
         return 1;
 
+    sfText *timer = createTimer(font);
     sfText *scoreText = createScoreText(font);
     sfText *playerLife = createPlayerLifeText(font);
 
@@ -351,6 +395,7 @@ int main() {
                 terminarJogo(window, score, scoreBuffer);
             }
         }
+        //updateTimer(timer, clock, tempoStr);
         
         float deltaTime = sfTime_asSeconds(sfClock_restart(clock));
         sfVector2f pos = sfSprite_getPosition(player->playerSprite);
@@ -417,7 +462,6 @@ int main() {
 
             sfCircleShape_move(bullets->bullets[i]->shape, bullets->bullets[i]->currentVelocity);
 
-  
             sfVector2f pos = sfCircleShape_getPosition(bullets->bullets[i]->shape);
             float radius = sfCircleShape_getRadius(bullets->bullets[i]->shape);
 
@@ -432,8 +476,6 @@ int main() {
             for (int k = 0; k < enemies->size; k++) {
                 sfFloatRect bulletBounds = sfCircleShape_getGlobalBounds(bullets->bullets[i]->shape);
                 sfFloatRect enemyBounds = sfSprite_getGlobalBounds(enemies->enemies[k]->shape);
-                
-                sfFloatRect playerBounds = sfSprite_getGlobalBounds(player->playerSprite);
                 
                 if (sfFloatRect_intersects(&bulletBounds, &enemyBounds, NULL)) {
                     eraseBulletAtIndex(bullets, i);
@@ -469,16 +511,17 @@ int main() {
         sfRenderWindow_clear(window, sfBlack);
         sfRenderWindow_drawSprite(window, bg, NULL);
         sfRenderWindow_drawSprite(window, player->playerSprite, NULL); 
+        
 
         for(int i = 0; i < enemies->size; i++) {
             sfRenderWindow_drawSprite(window, enemies->enemies[i]->shape, NULL);
             enemyFollowPlayer(enemies->enemies[i], player, deltaTime);
-            
         }
   
         for(int i = 0; i < bullets->size; i++) sfRenderWindow_drawCircleShape(window, bullets->bullets[i]->shape, NULL);
         sfRenderWindow_drawText(window, scoreText, NULL);
         sfRenderWindow_drawText(window, playerLife, NULL);
+        //sfRenderWindow_drawText(window, timer, NULL);
             
         sfRenderWindow_display(window); 
         if(vida <= 0){
