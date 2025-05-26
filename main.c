@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
 
 #define PI 3.14159265359
 
@@ -41,6 +43,15 @@ typedef struct {
 }EnemyVector;
 
 
+typedef struct {
+    sfSprite *bg;
+    sfSprite *btnExit;
+    sfSprite *btnRestart;
+    sfText *text[2];
+    sfText *textScore;
+    sfText *textTime;
+    int selected;
+} GameOver;
 
 EnemyVector* createEnemyVector(int capacity) {
     EnemyVector* vec = malloc(sizeof(EnemyVector));
@@ -126,7 +137,7 @@ Player *createPlayer(){
     player->playerSprite = sfSprite_create();
     sfSprite_setTexture(player->playerSprite, player->playerTexture, sfTrue);
     sfSprite_setScale(player->playerSprite, (sfVector2f){0.3f, 0.3f});
-    sfSprite_setPosition(player->playerSprite, (sfVector2f){600, 500});
+    sfSprite_setPosition(player->playerSprite, (sfVector2f){600, 450});
 
     return player;
 }
@@ -210,27 +221,36 @@ void writeHighScore(char *score){
     }
 }
 
-void saveHighScore(char *score){
+bool saveHighScore(char *score){
     char textBuffer[10];
+    int highScore = 0, currentScore = atoi(score);
     FILE *file = fopen("Highscore.txt", "r");
 
     if(file == NULL){
         writeHighScore(score);
-        return;
+        return false;
     }
 
-    while (fgets(textBuffer, sizeof(textBuffer), file) != NULL){
-        if(atoi(score) > atoi(textBuffer)){
-            writeHighScore(score);
-        }
-    } 
+    if(fgets(textBuffer, sizeof(textBuffer), file) != NULL){
+        highScore = atoi(textBuffer);
+    }
+    else{
+        highScore = 0;
+    }
     
+    if(currentScore > highScore){
+        writeHighScore(score);
+        return true;
+    }
     fclose(file);
+
+    return false;
 }
 
-void terminarJogo(sfRenderWindow *window, int score, char *scoreBuffer){
-    sfRenderWindow_close(window);
-    saveHighScore(itoa(score, scoreBuffer, 10));
+void terminarJogo(BulletVector *bullets, EnemyVector *enemies, Player *player){
+    freeBulletVector(bullets);
+    freeEnemyVector(enemies);
+    sfSprite_destroy(player->playerSprite);
 }
 
 void rotateEnemy(Enemy *enemy, sfVector2f distance){
@@ -249,9 +269,8 @@ void rotatePlayer(Player *player, sfVector2f distance){
     sfSprite_setRotation(player->playerSprite, angleDegress);
 }
 
-void enemyFollowPlayer(Enemy *enemy, Player *player, sfClock *clock){
+void enemyFollowPlayer(Enemy *enemy, Player *player, float deltaTime, float speed){
     sfVector2f playerPos, enemyPos, distance;
-    float deltaTime = sfTime_asSeconds(sfClock_restart(clock));
 
     playerPos = sfSprite_getPosition(player->playerSprite);
     enemyPos = sfSprite_getPosition(enemy->shape);
@@ -265,8 +284,8 @@ void enemyFollowPlayer(Enemy *enemy, Player *player, sfClock *clock){
         distance.y /= length;
     }
 
-    enemyPos.x += distance.x * 2.5f * deltaTime * 60.f;
-    enemyPos.y += distance.y * 2.5f * deltaTime * 60.f;
+    enemyPos.x += distance.x * speed * deltaTime * 60.f;
+    enemyPos.y += distance.y * speed * deltaTime * 60.f;
 
     sfFloatRect playerBounds = sfSprite_getGlobalBounds(player->playerSprite);
     sfFloatRect enemyBounds = sfSprite_getGlobalBounds(enemy->shape);
@@ -332,21 +351,68 @@ void updateTimer(sfText *timer, sfClock *clock, char *tempoStr){
     sfText_setString(timer, tempoStr);
 }
 
-sfSprite *createBg(int windowWidth, int windowHeight){
-    sfTexture *bgImage = sfTexture_createFromFile("./assets/sprites/bg.jpeg", NULL);
+sfSprite *createSprite(int x, int y, sfVector2f tamanho, char *path){
+    sfTexture *spriteImage = sfTexture_createFromFile(path, NULL);
 
-    if(!bgImage){
+    if(!spriteImage){
         printf("Imagem nao carregou");
         exit(1);
     } 
 
-    sfSprite *bgSprite = sfSprite_create();
+    sfSprite *sprite = sfSprite_create();
 
-    sfSprite_setTexture(bgSprite, bgImage, sfTrue);
-    sfSprite_setScale(bgSprite, (sfVector2f){1.2f, 1.2f});
-    sfSprite_setPosition(bgSprite, (sfVector2f){0, 0});
+    sfSprite_setTexture(sprite, spriteImage, sfTrue);
+    sfSprite_setScale(sprite, tamanho);
+    sfSprite_setPosition(sprite, (sfVector2f){x, y});
 
-    return bgSprite;
+    return sprite;
+}
+
+
+GameOver *menuInit(sfRenderWindow *window, sfFont *font, sfSprite *btnExit, sfSprite *btnRestart, sfSprite *bg){
+
+    GameOver *menu = malloc(sizeof(GameOver));
+
+    menu->selected = 0;
+
+    menu->btnExit = btnExit;
+    menu->btnRestart = btnRestart;
+    menu->bg = bg;
+
+    menu->text[0] = createText(font, (sfVector2f){405, 420}, sfWhite, 40);
+    menu->text[1] = createText(font, (sfVector2f){663, 420}, sfWhite, 40);
+    menu->textScore = createText(font, (sfVector2f){500, 510}, sfWhite, 50);
+    menu->textTime = createText(font, (sfVector2f){460, 310}, sfWhite, 50);
+
+    sfText_setString(menu->text[0], "RESTART");
+    sfText_setString(menu->text[1], "EXIT");
+        
+    return menu;
+}
+
+void writeScoreGameOver(sfRenderWindow *window, GameOver *menu, int score){
+    char textBuffer[20], scoreBuffer[10];
+    itoa(score, scoreBuffer, 10);
+
+    if(saveHighScore(scoreBuffer)){
+        sfText_setPosition(menu->textScore, (sfVector2f){360, 510});
+        sprintf(textBuffer, "NOVO HIGHSCORE: %d", score);
+        sfText_setString(menu->textScore, textBuffer);
+    }
+    else{
+        sprintf(textBuffer, "SCORE: %d", score);
+        sfText_setString(menu->textScore, textBuffer);
+    }
+}
+
+void drawMenu(sfRenderWindow *window, GameOver *menu){
+    sfRenderWindow_drawSprite(window, menu->bg, NULL);
+    sfRenderWindow_drawSprite(window, menu->btnRestart, NULL);
+    sfRenderWindow_drawSprite(window, menu->btnExit, NULL);
+    sfRenderWindow_drawText(window, menu->text[0], NULL);
+    sfRenderWindow_drawText(window, menu->text[1], NULL);
+    sfRenderWindow_drawText(window, menu->textScore, NULL);
+    sfRenderWindow_drawText(window, menu->textTime, NULL);
 }
 
 int main() {
@@ -354,10 +420,13 @@ int main() {
     sfRenderWindow* window = sfRenderWindow_create(mode, "Top down shooter", sfResize | sfClose, NULL);
     sfRenderWindow_setFramerateLimit(window, 60);
 
-    int enemySpawnTime = 0, shotCooldown = 0, score = 0, enemyCountMax = 5, vida = 100, perdaVidaCooldown = 10;
-    const int spawmCooldown = 30, shotCooldownMax = 20;
+    int enemySpawnTime = 0, shotCooldown = 0, score = 0, enemyCountMax = 5, vida = 100;
+    int perdaVidaCooldown = 8, killCount = 0, spawmCooldown = 30, shotCooldownMax = 20, scoreMultiplier = 1;
+    float speed = 2.5f;
     unsigned int enemyCount = 0;
-    char scoreStr[64], scoreBuffer[10], vidaStr[3], tempoStr[6];
+    char scoreStr[64], scoreBuffer[10], vidaStr[3], tempoStr[6], timeGameOverBuffer[20];
+
+    int jogoRodando = 1;
 
     sfClock *clock = sfClock_create();
     sfClock *clock2 = sfClock_create();
@@ -367,19 +436,24 @@ int main() {
 
     Player *player = createPlayer();
     
-    sfFont *font = sfFont_createFromFile("./assets/fontes/Headliner45.ttf");
+    sfFont *font = sfFont_createFromFile("./assets/fontes/Existence.ttf");
     if(!font)
         return 1;
 
     sfText *timer = createText(font, (sfVector2f){100, 800}, sfYellow, 60);
-    sfText *scoreText = createText(font, (sfVector2f){1050, 20}, sfYellow, 34);
+    sfText *scoreText = createText(font, (sfVector2f){1000, 20}, sfYellow, 34);
     sfText *playerLife = createText(font, (sfVector2f){100, 20}, sfYellow, 34);
 
     BulletVector *bullets = createBulletVector(10);
     EnemyVector *enemies = createEnemyVector(20);
 
-    sfSprite *bg = createBg(1200, 900);
+    sfSprite *bg = createSprite(0, 0,(sfVector2f){1.2f, 1.2f}, "./assets/sprites/bg.jpeg");
+    sfSprite *bgGameOver = createSprite(0, 0,(sfVector2f){1.5f, 1.5f}, "./assets/sprites/game_over.jpeg");
+    sfSprite *btnExit = createSprite(390, 400,(sfVector2f){2.5f, 2.f}, "./assets/sprites/btn.png");
+    sfSprite *btnRestart = createSprite(610, 400,(sfVector2f){2.5f, 2.f}, "./assets/sprites/btn.png");
 
+
+    GameOver *menu = menuInit(window, font, btnExit, btnRestart, bgGameOver);
     while (sfRenderWindow_isOpen(window))
     {
         sfEvent event;
@@ -387,9 +461,12 @@ int main() {
         {
             if (event.type == sfEvtClosed)
             {
-                terminarJogo(window, score, scoreBuffer);
+                terminarJogo(bullets, enemies, player);
             }
         }
+
+        if(jogoRodando == 1){
+        float deltaTime = sfTime_asSeconds(sfClock_restart(clock));
         updateTimer(timer, clock2, tempoStr);
         
         getPlayerAim(window, player);
@@ -459,8 +536,9 @@ int main() {
                     i--; 
                     collided = 1;
                     enemyCount--;
-                    score += 10;
+                    score += 10 * scoreMultiplier;
                     enemySpawnTime = 0;
+                    killCount++;
                     break;
                 }
             }
@@ -479,11 +557,19 @@ int main() {
                 if(perdaVidaCooldown == 0){
                     vida--;
                     perdaVidaCooldown = 10;
-                    printf("Vida: %d\n", vida);
                 }
             }
         }
+
         
+        if(killCount == 5 && enemyCountMax <= 23){
+            enemyCountMax++;
+            spawmCooldown--;
+            scoreMultiplier ++;
+            speed += 0.1f;
+            killCount = 0;
+        }
+
         sfRenderWindow_clear(window, sfBlack);
         sfRenderWindow_drawSprite(window, bg, NULL);
         sfRenderWindow_drawSprite(window, player->playerSprite, NULL); 
@@ -491,24 +577,62 @@ int main() {
 
         for(int i = 0; i < enemies->size; i++) {
             sfRenderWindow_drawSprite(window, enemies->enemies[i]->shape, NULL);
-            enemyFollowPlayer(enemies->enemies[i], player, clock);
+            enemyFollowPlayer(enemies->enemies[i], player, deltaTime, speed);
         }
   
         for(int i = 0; i < bullets->size; i++) sfRenderWindow_drawCircleShape(window, bullets->bullets[i]->shape, NULL);
         sfRenderWindow_drawText(window, scoreText, NULL);
         sfRenderWindow_drawText(window, playerLife, NULL);
         sfRenderWindow_drawText(window, timer, NULL);
-            
+        
+        
         sfRenderWindow_display(window); 
         if(vida <= 0){
-            terminarJogo(window, score, scoreBuffer);
+            jogoRodando = 0;
+            sprintf(timeGameOverBuffer, "TEMPO: %s", tempoStr);
+            sfText_setString(menu->textTime, timeGameOverBuffer);
+
+            terminarJogo(bullets, enemies, player);
+            writeScoreGameOver(window, menu, score);
+            }
         }
+        else{
+            sfRenderWindow_clear(window, sfBlack);
 
+            drawMenu(window, menu);
+
+             
+            if (sfKeyboard_isKeyPressed(sfKeyRight) && menu->selected < 2 - 1) {
+                sfText_setFillColor(menu->text[menu->selected], sfWhite);
+                menu->selected++;
+                sfText_setFillColor(menu->text[menu->selected], sfYellow);
+            }
+            if (sfKeyboard_isKeyPressed(sfKeyLeft) && menu->selected > 0) {
+                sfText_setFillColor(menu->text[menu->selected], sfWhite);
+                menu->selected--;
+                sfText_setFillColor(menu->text[menu->selected], sfYellow);
+            }
+            if (sfKeyboard_isKeyPressed(sfKeyEnter)) {
+                if(menu->selected == 0){
+                    sfRenderWindow_close(window);
+                    main();
+                }
+                if (menu->selected == 1)
+                    sfRenderWindow_close(window);
+                    sfRenderWindow_destroy(window);
+            }
+            
+
+            sfRenderWindow_display(window); 
+            if (event.type == sfEvtClosed)
+            {
+                sfRenderWindow_close(window);
+                sfRenderWindow_destroy(window);
+            }
+        }
+        
     }
-
-    freeBulletVector(bullets);
-    freeEnemyVector(enemies);
-    sfSprite_destroy(player->playerSprite);
+    
     sfRenderWindow_destroy(window);
 
     return 0;

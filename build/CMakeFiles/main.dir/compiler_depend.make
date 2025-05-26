@@ -64,6 +64,7 @@ CMakeFiles/main.dir/main.c.obj: C:/Projetos/ProjetoCSFML/main.c \
   C:/CSFML/include/SFML/Window/WindowHandle.h \
   C:/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/limits.h \
   C:/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/mm_malloc.h \
+  C:/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stdbool.h \
   C:/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stddef.h \
   C:/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/syslimits.h \
   C:/mingw64/x86_64-w64-mingw32/include/_mingw.h \
@@ -81,9 +82,11 @@ CMakeFiles/main.dir/main.c.obj: C:/Projetos/ProjetoCSFML/main.c \
   C:/mingw64/x86_64-w64-mingw32/include/sdks/_mingw_ddk.h \
   C:/mingw64/x86_64-w64-mingw32/include/sec_api/stdio_s.h \
   C:/mingw64/x86_64-w64-mingw32/include/sec_api/stdlib_s.h \
+  C:/mingw64/x86_64-w64-mingw32/include/sec_api/string_s.h \
   C:/mingw64/x86_64-w64-mingw32/include/stddef.h \
   C:/mingw64/x86_64-w64-mingw32/include/stdio.h \
   C:/mingw64/x86_64-w64-mingw32/include/stdlib.h \
+  C:/mingw64/x86_64-w64-mingw32/include/string.h \
   C:/mingw64/x86_64-w64-mingw32/include/swprintf.inl \
   C:/mingw64/x86_64-w64-mingw32/include/vadefs.h
 
@@ -106,9 +109,9 @@ C:/CSFML/include/SFML/Config.h:
 
 C:/CSFML/include/SFML/Graphics.h:
 
-C:/CSFML/include/SFML/Graphics/CircleShape.h:
-
 C:/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stddef.h:
+
+C:/CSFML/include/SFML/Graphics/CircleShape.h:
 
 C:/CSFML/include/SFML/Window/Clipboard.h:
 
@@ -190,6 +193,8 @@ C:/CSFML/include/SFML/System/Clock.h:
 
 C:/CSFML/include/SFML/System/Export.h:
 
+C:/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stdbool.h:
+
 C:/CSFML/include/SFML/System/Thread.h:
 
 C:/CSFML/include/SFML/System/Time.h:
@@ -250,9 +255,13 @@ C:/mingw64/x86_64-w64-mingw32/include/sec_api/stdio_s.h:
 
 C:/mingw64/x86_64-w64-mingw32/include/sec_api/stdlib_s.h:
 
+C:/mingw64/x86_64-w64-mingw32/include/sec_api/string_s.h:
+
 C:/mingw64/x86_64-w64-mingw32/include/stddef.h:
 
 C:/mingw64/x86_64-w64-mingw32/include/stdio.h:
+
+C:/mingw64/x86_64-w64-mingw32/include/string.h:
 
 C:/mingw64/x86_64-w64-mingw32/include/swprintf.inl:
 
